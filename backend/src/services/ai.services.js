@@ -2,7 +2,6 @@ const fs = require("fs")
 const { GoogleGenAI } = require("@google/genai")
 const { z } = require("zod")
 const { zodToJsonSchema } = require("zod-to-json-schema")
-const puppeteer = require("puppeteer")
 
 const ai = process.env.GOOGLE_GENAI_API_KEY
     ? new GoogleGenAI({ apiKey: process.env.GOOGLE_GENAI_API_KEY })
@@ -168,7 +167,8 @@ async function launchBrowser() {
         })
     }
 
-
+    // Full puppeteer is a local-only dependency (backend/package.json); requiring it at module load crashes the Vercel function.
+    const puppeteer = require("puppeteer")
     const browserExecutablePath = resolveBrowserExecutablePath(puppeteer)
 
     if (!browserExecutablePath) {
