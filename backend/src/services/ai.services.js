@@ -123,7 +123,7 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
     }
 }
 
-function resolveBrowserExecutablePath() {
+function resolveBrowserExecutablePath(puppeteer) {
     const candidates = [
         process.env.PUPPETEER_EXECUTABLE_PATH,
         "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
@@ -156,18 +156,34 @@ function resolveBrowserExecutablePath() {
     return null
 }
 
-async function generatePdfFromHtml(htmlContent) {
-    const browserExecutablePath = resolveBrowserExecutablePath()
+async function launchBrowser() {
+    // Serverless (Vercel) has no system Chrome; use the bundled Lambda-compatible Chromium build.
+    if (process.env.VERCEL) {
+        const chromium = require("@sparticuz/chromium")
+        const puppeteerCore = require("puppeteer-core")
+        return puppeteerCore.launch({
+            args: chromium.args,
+            executablePath: await chromium.executablePath(),
+            headless: true
+        })
+    }
+
+
+    const browserExecutablePath = resolveBrowserExecutablePath(puppeteer)
 
     if (!browserExecutablePath) {
         throw new Error("No Chrome/Edge browser binary was found on this machine. Install Chrome or Edge and retry.")
     }
 
-    const browser = await puppeteer.launch({
+    return puppeteer.launch({
         headless: "new",
         executablePath: browserExecutablePath,
         args: ["--no-sandbox", "--disable-setuid-sandbox"]
     })
+}
+
+async function generatePdfFromHtml(htmlContent) {
+    const browser = await launchBrowser()
     const page = await browser.newPage()
     await page.setContent(htmlContent, { waitUntil: "networkidle0" })
 
