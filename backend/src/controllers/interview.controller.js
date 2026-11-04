@@ -150,12 +150,17 @@ async function generateResumePdfController(req, res) {
 
     const pdfBuffer = await generateResumePdf({ resume, jobDescription, selfDescription })
 
+    const pdfFileName = `resume_${interviewReportId}.pdf`
+
     res.set({
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename=resume_${interviewReportId}.pdf`
+        "Content-Disposition": `inline; filename="${pdfFileName}"; filename*=UTF-8''${encodeURIComponent(pdfFileName)}`,
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
     })
 
-    res.send(pdfBuffer)
+    res.send(Buffer.from(pdfBuffer))
 }
 
 module.exports = { generateInterViewReportController, getInterviewReportByIdController, getAllInterviewReportsController, generateResumePdfController }

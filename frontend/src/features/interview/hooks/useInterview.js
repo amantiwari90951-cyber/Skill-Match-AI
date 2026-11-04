@@ -64,22 +64,32 @@ export const useInterview = () => {
         setLoading(true)
         try {
             const response = await generateResumePdf({ interviewReportId })
-            const pdfBlob = response?.data ?? response
-            const blob = pdfBlob instanceof Blob ? pdfBlob : new Blob([pdfBlob], { type: 'application/pdf' })
-            const fileUrl = window.URL.createObjectURL(blob)
-            const link = document.createElement('a')
+            const data = response?.data ?? response
+            const pdfBlob = data instanceof Blob
+                ? data
+                : new Blob([data], { type: 'application/pdf' })
+
+            const fileUrl = window.URL.createObjectURL(pdfBlob)
             const contentDisposition = response?.headers?.['content-disposition'] || response?.headers?.['Content-Disposition'] || ''
             const matches = contentDisposition.match(/filename\s*=\s*"?([^";]+)"?/) ?? null
             const filename = matches?.[1] || `resume_${interviewReportId}.pdf`
 
+            const previewWindow = window.open('', '_blank', 'noopener,noreferrer')
+            if (previewWindow) {
+                previewWindow.document.title = filename
+                previewWindow.location.href = fileUrl
+            }
+
+            const link = document.createElement('a')
             link.href = fileUrl
             link.download = filename
             link.rel = 'noopener'
+            link.target = '_blank'
             document.body.appendChild(link)
             link.click()
             link.remove()
 
-            setTimeout(() => window.URL.revokeObjectURL(fileUrl), 1500)
+            setTimeout(() => window.URL.revokeObjectURL(fileUrl), 20000)
         } catch (error) {
             console.log(error)
             window.alert('Unable to download the resume PDF right now. Please try again.')
