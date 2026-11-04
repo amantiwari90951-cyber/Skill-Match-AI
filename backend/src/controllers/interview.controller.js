@@ -1,7 +1,37 @@
-const pdfParse = require("pdf-parse")
 const mammoth = require("mammoth")
 const { generateInterviewReport, generateResumePdf } = require("../services/ai.services")
 const interviewReportModel = require("../models/interviewReport.models")
+
+async function extractPdfText(buffer) {
+    const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs")
+    const loadingTask = pdfjsLib.getDocument({
+        data: new Uint8Array(buffer),
+        useWorkerFetch: false,
+        isEvalSupported: false,
+        disableFontFace: true,
+        ignoreErrors: true
+    })
+
+    const pdf = await loadingTask.promise
+    const pageTexts = []
+
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+        const page = await pdf.getPage(pageNumber)
+        const textContent = await page.getTextContent()
+        const pageText = textContent.items
+            .map((item) => (typeof item.str === "string" ? item.str : ""))
+            .join(" ")
+            .replace(/\s+/g, " ")
+            .trim()
+
+        if (pageText) {
+            pageTexts.push(pageText)
+        }
+    }
+
+    await pdf.destroy()
+    return pageTexts.join("\n")
+}
 
 async function extractResumeText(file) {
     if (!file || !file.buffer) {
@@ -12,8 +42,7 @@ async function extractResumeText(file) {
 
     try {
         if (fileName.endsWith(".pdf") || file.mimetype === "application/pdf") {
-            const parsedResume = await pdfParse(file.buffer)
-            return parsedResume.text || ""
+            return await extractPdfText(file.buffer)
         }
 
         if (fileName.endsWith(".docx") || file.mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {

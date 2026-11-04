@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken")
 const tokenBlacklistModel = require("../models/blacklist.model")
 
 const isProduction = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL)
+const JWT_SECRET = process.env.JWT_SECRET || "skill-match-ai-dev-secret"
 
 const cookieOptions = {
     httpOnly: true,
@@ -48,7 +49,7 @@ async function registerUserController(req, res) {
 
     const token = jwt.sign(
         { id: user._id, username: user.username },
-        process.env.JWT_SECRET,
+        JWT_SECRET,
         { expiresIn: "1d" }
     )
 
@@ -94,7 +95,7 @@ async function loginUserController(req, res) {
 
     const token = jwt.sign(
         { id: user._id, username: user.username },
-        process.env.JWT_SECRET,
+        JWT_SECRET,
         { expiresIn: "1d" }
     )
 

@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken")
 const tokenBlacklistModel = require("../models/blacklist.model")
 
-
+const JWT_SECRET = process.env.JWT_SECRET || "skill-match-ai-dev-secret"
 
 async function authUser(req, res, next) {
 
@@ -24,7 +24,7 @@ async function authUser(req, res, next) {
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+        const decoded = jwt.verify(token, JWT_SECRET)
 
         req.user = decoded
 
