@@ -2,7 +2,15 @@ const fs = require("fs")
 const { GoogleGenAI } = require("@google/genai")
 const { z } = require("zod")
 const { zodToJsonSchema } = require("zod-to-json-schema")
-const puppeteer = require("puppeteer")
+
+let puppeteerCore
+if (!process.env.VERCEL) {
+    try {
+        puppeteerCore = require("puppeteer-core")
+    } catch (error) {
+        console.warn("puppeteer-core is not installed; browser-based PDF generation will fail until a Chrome/Edge install is available.")
+    }
+}
 
 const ai = process.env.GOOGLE_GENAI_API_KEY
     ? new GoogleGenAI({ apiKey: process.env.GOOGLE_GENAI_API_KEY })
@@ -169,13 +177,17 @@ async function launchBrowser() {
     }
 
 
-    const browserExecutablePath = resolveBrowserExecutablePath(puppeteer)
+    if (!puppeteerCore) {
+        throw new Error("No browser automation dependency was found. Install Chrome/Edge or ensure puppeteer-core is available.")
+    }
+
+    const browserExecutablePath = resolveBrowserExecutablePath(puppeteerCore)
 
     if (!browserExecutablePath) {
         throw new Error("No Chrome/Edge browser binary was found on this machine. Install Chrome or Edge and retry.")
     }
 
-    return puppeteer.launch({
+    return puppeteerCore.launch({
         headless: "new",
         executablePath: browserExecutablePath,
         args: ["--no-sandbox", "--disable-setuid-sandbox"]
